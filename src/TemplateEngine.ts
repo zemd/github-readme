@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { Context } from "./types.js";
 
-type Plugin = (params: Record<string, string>, context: Context) => string;
+type Plugin = (params: Record<string, string>, context: Context) => Promise<string> | string;
 
 export class TemplateEngine {
   readonly #plugins: Map<string, Plugin> = new Map<string, Plugin>();
@@ -10,11 +10,11 @@ export class TemplateEngine {
     this.#plugins.set(name, fn);
   }
 
-  render(template: string, context: Context): string {
-    return this.process(template, context);
+  async render(template: string, context: Context): Promise<string> {
+    return await this.process(template, context);
   }
 
-  private process(template: string, context: Context): string {
+  private async process(template: string, context: Context): Promise<string> {
     let result: string;
 
     // Handle includes
@@ -27,7 +27,7 @@ export class TemplateEngine {
     });
 
     // Handle nested conditionals
-    result = this.processConditionals(result, context);
+    result = await this.processConditionals(result, context);
 
     // Handle variables
     result = result.replaceAll(/{{\s*(\w+)\s*}}/g, (_, varName) => {
@@ -35,28 +35,62 @@ export class TemplateEngine {
     });
 
     // Handle custom plugins (blocks)
-    result = result.replaceAll(/{{\s*block\s+(\w+)\s*(.*?)\s*}}/g, (_, blockName, paramsStr) => {
-      const plugin = this.#plugins.get(blockName);
-      if (plugin) {
-        return plugin(this.parseParams(paramsStr), context);
-      }
-      return `Error: Block '${blockName}' not found`;
-    });
+    result = await this.processBlocks(result, context);
 
     return result;
   }
 
-  private processConditionals(template: string, context: Context): string {
+  private async processBlocks(template: string, context: Context): Promise<string> {
+    const blockRegex = /{{\s*block\s+(\w+)\s*(.*?)\s*}}/g;
+    const matches = [...template.matchAll(blockRegex)];
+    let result = template;
+
+    for (const match of matches) {
+      const [fullMatch, blockName, paramsStr] = match;
+      if (!blockName) {
+        continue;
+      }
+      const plugin = this.#plugins.get(blockName);
+      if (plugin) {
+        const replacement = await plugin(paramsStr ? this.parseParams(paramsStr) : {}, context);
+        result = result.replaceAll(fullMatch, replacement);
+      } else {
+        result = result.replaceAll(fullMatch, `Error: Block '${blockName}' not found`);
+      }
+    }
+
+    return result;
+  }
+
+  private async processConditionals(template: string, context: Context): Promise<string> {
     const conditionalRegex =
       /{{\s*if\s+(.*?)\s*}}([\s\S]*?)(?:{{\s*else\s*}}([\s\S]*?))?{{\s*endif\s*}}/g;
-    return template.replaceAll(conditionalRegex, (_, condition, ifBlock, elseBlock) => {
+    let result = template;
+
+    const matches = [...template.matchAll(conditionalRegex)];
+
+    for (const match of matches) {
+      const [fullMatch, condition, ifBlock, elseBlock] = match;
+      if (!condition) {
+        continue;
+      }
       const evaluatedCondition = this.evaluateCondition(condition, context);
-      return evaluatedCondition
-        ? this.process(ifBlock, context)
-        : elseBlock
-          ? this.process(elseBlock, context)
-          : "";
-    });
+      const replacement = evaluatedCondition ? ifBlock : (elseBlock ?? "");
+      result = result.replaceAll(
+        fullMatch,
+        replacement ?? `Error: Invalid conditional '${fullMatch}'`,
+      );
+    }
+
+    return result;
+    // return template.replaceAll(conditionalRegex, (_, condition, ifBlock, elseBlock) => {
+    //   const evaluatedCondition = this.evaluateCondition(condition, context);
+    //   return evaluatedCondition
+    //     ? this.process(ifBlock, context)
+    //     : elseBlock
+    //       ? this.process(elseBlock, context)
+    //       : "";
+    // });
   }
 
   private evaluateCondition(condition: string, context: Context): boolean {

@@ -16,6 +16,8 @@ import {
 import spdx from "spdx-license-list/full.js";
 import { globby } from "globby";
 import type { Context } from "./types.js";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
 
 const githubReadmePackageJson = loadPackageJson(import.meta.url);
 const cli = cac("github-readme");
@@ -121,6 +123,22 @@ engine.registerBlock("badgeNpmVersion", (params) => {
   });
 });
 
+engine.registerBlock("ai", async (params) => {
+  if (!params.prompt) {
+    throw new Error("prompt param is required for ai block");
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable is required for ai block");
+  }
+  const { text } = await generateText({
+    model: openai("gpt-4o-mini"),
+    system: "You are technical writer and you need to write a README.md file for your project.",
+    prompt: params.prompt,
+    temperature: 0.5,
+  });
+  return text;
+});
+
 type BuildParams = {
   output?: string;
 };
@@ -147,7 +165,7 @@ cli
       ...rest,
     };
 
-    await writeFile(params.output ?? "README.md", engine.render(content, context));
+    await writeFile(params.output ?? "README.md", await engine.render(content, context));
     console.log("README.md file generated");
   });
 
