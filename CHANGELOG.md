@@ -1,5 +1,11 @@
 # @zemd/github-readme
 
+## 0.0.3
+
+### Patch Changes
+
+- 8bbae1c: ai ai ai
+
 ## 0.0.2
 
 ### Patch Changes
