@@ -7,7 +7,7 @@
     "prepare": "husky",
     "changeset": "changeset",
     "build": "tsup src/index.ts --format esm --minify",
-    "quick-test": "bun src/index.ts build ./README.md.template"
+    "readme": "pnpm run build && node dist/index.js build ./README.md.template"
   },
   "bin": {
     "github-readme": "dist/index.js"
