@@ -1,4 +1,4 @@
-# Hello World
+# @zemd/github-readme
 
 Simple utils to build readme files for my projects
 
