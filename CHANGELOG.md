@@ -1,5 +1,11 @@
 # @zemd/github-readme
 
+## 0.0.4
+
+### Patch Changes
+
+- 75ade4d: ai block tuning
+
 ## 0.0.3
 
 ### Patch Changes
