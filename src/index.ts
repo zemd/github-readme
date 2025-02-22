@@ -128,7 +128,8 @@ engine.registerBlock("ai", async (params) => {
     throw new Error("prompt param is required for ai block");
   }
   if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY environment variable is required for ai block");
+    console.error("OPENAI_API_KEY environment variable is required for ai block");
+    return "";
   }
   const { text } = await generateText({
     model: openai("gpt-4o-mini"),
