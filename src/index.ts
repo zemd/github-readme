@@ -2,7 +2,7 @@ import { cac } from "cac";
 import { loadPackageJson } from "package-json-from-dist";
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { TemplateEngine } from "./TemplateEngine.js";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import {
   bold,
   code,
@@ -15,8 +15,9 @@ import {
 } from "./markdown.js";
 import spdx from "spdx-license-list/full.js";
 import { globby } from "globby";
+import type { Context } from "./types.js";
 
-const pkg = loadPackageJson(import.meta.url);
+const githubReadmePackageJson = loadPackageJson(import.meta.url);
 const cli = cac("github-readme");
 
 const checkFile = async (path: string): Promise<boolean> => {
@@ -30,23 +31,27 @@ const checkFile = async (path: string): Promise<boolean> => {
 
 const detectMonorepo = async (): Promise<boolean> => {
   return (
-    (Array.isArray(pkg.workspaces) && pkg.workspaces.length > 0) ||
+    (Array.isArray(githubReadmePackageJson.workspaces) &&
+      githubReadmePackageJson.workspaces.length > 0) ||
     (await checkFile("pnpm-workspace.yaml")) ||
     (await checkFile("vlt-workspaces.json"))
   );
 };
 
-const findPackages = async (root: string) => {
+const findPackages = async (cwd: string): Promise<[object, string][]> => {
   const paths = await globby(["**/package.json", "!./package.json", "!node_modules"], {
     gitignore: true,
-    cwd: root,
+    cwd,
   });
   const packages = await Promise.all(
     paths.map((pkgPath): any => {
-      return readFile(pkgPath, "utf8");
+      const absolutePkgPath = resolve(cwd, pkgPath);
+      return readFile(absolutePkgPath, "utf8").then((pkgStr: string) => {
+        return [JSON.parse(pkgStr), pkgPath];
+      });
     }),
   );
-  return packages.filter((pkg) => {
+  return packages.filter(([pkg]) => {
     return !pkg.private;
   });
 };
@@ -58,7 +63,7 @@ engine.registerBlock("installation", (params) => {
     ? params.packages.split(",")
     : ["npm install --save-dev", "pnpm add -D"];
   const installPkg = packages.reduce((acc, packg) => {
-    return `${acc}\n${packg} ${pkg.name}`;
+    return `${acc}\n${packg} ${githubReadmePackageJson.name}`;
   }, "");
 
   return codeBlock({
@@ -67,31 +72,33 @@ engine.registerBlock("installation", (params) => {
   });
 });
 
-engine.registerBlock("license", () => {
-  const licenseSpdx = spdx[pkg.license];
-  const [name, url] = licenseSpdx ? [licenseSpdx.name, licenseSpdx.url] : [pkg.license];
+engine.registerBlock("license", (_params, context) => {
+  const licenseSpdx = spdx[context.license];
+  const [name, url] = licenseSpdx ? [licenseSpdx.name, licenseSpdx.url] : [context.license];
   const formatted = bold(url ? link(name, url) : name);
 
-  return `The ${code(pkg.name)} is licensed under ${formatted} 😇.`;
+  return `The ${code(context.name)} is licensed under ${formatted} 😇.`;
 });
 
 engine.registerBlock("packages", (_params, context) => {
   const { packages } = context;
-  return packages.reduce(
-    (acc: TableBuilder, pkg: any) => {
-      return acc.addRow([
-        pkg.name,
-        shieldNpmVersion({
-          packageName: pkg.name,
-          color: "#0000ff",
-          labelColor: "#000",
-        }),
-        pkg.description,
-        spdx[pkg.license]?.name || pkg.license,
-      ]);
-    },
-    table(["Package", "Version", "Description", "License"]),
-  );
+  return packages
+    .reduce(
+      (acc: TableBuilder, [pkg, pkgPath]: [any, string]) => {
+        return acc.addRow([
+          link(pkg.name, join(dirname(pkgPath), "README.md")),
+          shieldNpmVersion({
+            packageName: pkg.name,
+            color: "#0000ff",
+            labelColor: "#000",
+          }),
+          pkg.description,
+          spdx[pkg.license]?.name || pkg.license,
+        ]);
+      },
+      table(["Package", "Version", "Description", "License"]),
+    )
+    .toString();
 });
 
 engine.registerBlock("donate", () => {
@@ -125,9 +132,13 @@ cli
   .option("--description <description>", "Project description")
   .action(async (input: string, params: BuildParams) => {
     const { output, ...rest } = params;
+    console.log("CWD: ", process.cwd());
+    const pkg = JSON.parse(await readFile(resolve(process.cwd(), "package.json"), "utf8"));
     const source = resolve(process.cwd(), input);
+    console.log("INPUT: ", source);
     const content = await readFile(source, "utf8");
-    const context = {
+    const context: Context = {
+      name: pkg.name,
       title: pkg.name,
       description: pkg.description,
       license: pkg.license,
@@ -141,6 +152,6 @@ cli
   });
 
 cli.help();
-cli.version(pkg.version);
+cli.version(githubReadmePackageJson.version);
 
 cli.parse();

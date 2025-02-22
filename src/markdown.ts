@@ -41,7 +41,7 @@ type NpmVersionShield = {
 };
 export const shieldNpmVersion = (params: NpmVersionShield): string => {
   const url = new URL(`https://img.shields.io/npm/v/`);
-  url.pathname = params.packageName;
+  url.pathname = `${url.pathname}${params.packageName}`;
   if (params.color) {
     url.searchParams.append("color", params.color);
   }
@@ -75,15 +75,15 @@ export class TableBuilder {
   }
 
   toString(): string {
-    const header = this.cols.join(" | ");
-    const divider = this.cols
+    const header = `| ${this.cols.join(" | ")} |`;
+    const divider = `| ${this.cols
       .map(() => {
         return "---";
       })
-      .join(" | ");
+      .join(" | ")} |`;
     const body = this.rows
       .map((row) => {
-        return row.join(" | ");
+        return `| ${row.join(" | ")} |`;
       })
       .join("\n");
     return `${header}\n${divider}\n${body}`;

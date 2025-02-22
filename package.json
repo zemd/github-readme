@@ -8,6 +8,7 @@
     "changeset": "changeset",
     "release": "pnpm run build && changeset publish",
     "build": "tsup src/index.ts --format esm --minify",
+    "watch": "tsup src/index.ts --format esm --watch",
     "readme": "pnpm run build && node dist/index.js build ./README.md.template"
   },
   "bin": {

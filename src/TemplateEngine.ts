@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
+import type { Context } from "./types.js";
 
-type Plugin = (params: Record<string, string>, context: Record<string, any>) => string;
+type Plugin = (params: Record<string, string>, context: Context) => string;
 
 export class TemplateEngine {
   readonly #plugins: Map<string, Plugin> = new Map<string, Plugin>();
@@ -9,11 +10,11 @@ export class TemplateEngine {
     this.#plugins.set(name, fn);
   }
 
-  render(template: string, context: Record<string, any>): string {
+  render(template: string, context: Context): string {
     return this.process(template, context);
   }
 
-  private process(template: string, context: Record<string, any>): string {
+  private process(template: string, context: Context): string {
     let result: string;
 
     // Handle includes
@@ -45,7 +46,7 @@ export class TemplateEngine {
     return result;
   }
 
-  private processConditionals(template: string, context: Record<string, any>): string {
+  private processConditionals(template: string, context: Context): string {
     const conditionalRegex =
       /{{\s*if\s+(.*?)\s*}}([\s\S]*?)(?:{{\s*else\s*}}([\s\S]*?))?{{\s*endif\s*}}/g;
     return template.replaceAll(conditionalRegex, (_, condition, ifBlock, elseBlock) => {
@@ -58,7 +59,7 @@ export class TemplateEngine {
     });
   }
 
-  private evaluateCondition(condition: string, context: Record<string, any>): boolean {
+  private evaluateCondition(condition: string, context: Context): boolean {
     try {
       return new Function(...Object.keys(context), `return Boolean(${condition});`)(
         ...Object.values(context),
