@@ -83,14 +83,6 @@ export class TemplateEngine {
     }
 
     return result;
-    // return template.replaceAll(conditionalRegex, (_, condition, ifBlock, elseBlock) => {
-    //   const evaluatedCondition = this.evaluateCondition(condition, context);
-    //   return evaluatedCondition
-    //     ? this.process(ifBlock, context)
-    //     : elseBlock
-    //       ? this.process(elseBlock, context)
-    //       : "";
-    // });
   }
 
   private evaluateCondition(condition: string, context: Context): boolean {
