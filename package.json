@@ -6,6 +6,7 @@
     "lint": "eslint .",
     "prepare": "husky",
     "changeset": "changeset",
+    "release": "pnpm run build && changeset publish",
     "build": "tsup src/index.ts --format esm --minify",
     "readme": "pnpm run build && node dist/index.js build ./README.md.template"
   },
