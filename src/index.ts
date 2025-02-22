@@ -135,7 +135,6 @@ cli
       packages: await findPackages(process.cwd()),
       ...rest,
     };
-    console.log("context: ", context);
 
     await writeFile(params.output ?? "README.md", engine.render(content, context));
     console.log("README.md file generated");

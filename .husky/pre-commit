@@ -1,3 +1,4 @@
 pnpm run readme
 prettier $(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g') --write --ignore-unknown
+git add -u
 git update-index --again
