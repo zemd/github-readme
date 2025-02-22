@@ -1,0 +1,37 @@
+# {{ title }}
+
+{{ description }}
+
+{{ if monorepo }}
+## Available packages
+
+{{ block packages }}
+{{ else }}
+{{ block badgeNpmVersion packageName="@zemd/github-readme" color="#0000ff" labelColor="#000" }}
+{{ endif }}
+
+## Usage
+
+### Installation
+
+{{ block installation }}
+
+### Configuration
+
+```bash
+npm pkg set scripts.readme="github-readme build ./README.md.template"
+```
+
+and then run:
+
+```bash
+npm run readme
+```
+
+### License
+
+{{ block license }}
+
+## 💙 💛 Donate
+
+{{ block donate }}

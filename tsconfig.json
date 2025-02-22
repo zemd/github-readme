@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "@zemd/github-readme utilities",
+  "extends": "@zemd/tsconfig/tsconfig-base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "target": "ES2022",
+    "sourceMap": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
