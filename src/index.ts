@@ -31,10 +31,9 @@ const checkFile = async (path: string): Promise<boolean> => {
   }
 };
 
-const detectMonorepo = async (): Promise<boolean> => {
+const detectMonorepo = async (rootPkg: any): Promise<boolean> => {
   return (
-    (Array.isArray(githubReadmePackageJson.workspaces) &&
-      githubReadmePackageJson.workspaces.length > 0) ||
+    (Array.isArray(rootPkg.workspaces) && rootPkg.workspaces.length > 0) ||
     (await checkFile("pnpm-workspace.yaml")) ||
     (await checkFile("vlt-workspaces.json"))
   );
@@ -64,8 +63,8 @@ engine.registerBlock("installation", (params) => {
   const packages = params.packages
     ? params.packages.split(",")
     : ["npm install --save-dev", "pnpm add -D"];
-  const installPkg = packages.reduce((acc, packg) => {
-    return `${acc}\n${packg} ${githubReadmePackageJson.name}`;
+  const installPkg = packages.reduce((acc, pgkManager) => {
+    return `${acc}\n${pgkManager} ${params.name}`;
   }, "");
 
   return codeBlock({
@@ -161,7 +160,8 @@ cli
       title: pkg.name,
       description: pkg.description,
       license: pkg.license,
-      monorepo: await detectMonorepo(),
+      workspaces: pkg.workspaces, // TODO: read from pnpm-workspace.yaml or vlt-workspaces.json
+      monorepo: await detectMonorepo(pkg),
       packages: await findPackages(process.cwd()),
       ...rest,
     };
