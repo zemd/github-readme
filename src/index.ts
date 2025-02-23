@@ -59,12 +59,14 @@ const findPackages = async (cwd: string): Promise<[object, string][]> => {
 
 const engine = new TemplateEngine();
 
-engine.registerBlock("installation", (params) => {
-  const packages = params.packages
-    ? params.packages.split(",")
+engine.registerBlock("installation", (params, context) => {
+  const pkgManagers = params.pkgManagers
+    ? params.pkgManagers.split(",")
     : ["npm install --save-dev", "pnpm add -D"];
-  const installPkg = packages.reduce((acc, pgkManager) => {
-    return `${acc}\n${pgkManager} ${params.name}`;
+
+  const pkg = params.package ?? context.name;
+  const installPkg = pkgManagers.reduce((acc, pgkManager) => {
+    return `${acc}\n${pgkManager} ${pkg}`;
   }, "");
 
   return codeBlock({
@@ -151,17 +153,17 @@ cli
   .action(async (input: string, params: BuildParams) => {
     const { output, ...rest } = params;
     console.log("CWD: ", process.cwd());
-    const pkg = JSON.parse(await readFile(resolve(process.cwd(), "package.json"), "utf8"));
+    const rootPkg = JSON.parse(await readFile(resolve(process.cwd(), "package.json"), "utf8"));
     const source = resolve(process.cwd(), input);
     console.log("INPUT: ", source);
     const content = await readFile(source, "utf8");
     const context: Context = {
-      name: pkg.name,
-      title: pkg.name,
-      description: pkg.description,
-      license: pkg.license,
-      workspaces: pkg.workspaces, // TODO: read from pnpm-workspace.yaml or vlt-workspaces.json
-      monorepo: await detectMonorepo(pkg),
+      name: rootPkg.name,
+      title: rootPkg.name,
+      description: rootPkg.description,
+      license: rootPkg.license,
+      workspaces: rootPkg.workspaces, // TODO: read from pnpm-workspace.yaml or vlt-workspaces.json
+      monorepo: await detectMonorepo(rootPkg),
       packages: await findPackages(process.cwd()),
       ...rest,
     };

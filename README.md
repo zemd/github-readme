@@ -11,8 +11,8 @@ Simple utils to build readme files for my projects
 ### Installation
 
 ```bash
-npm install --save-dev undefined
-pnpm add -D undefined
+npm install --save-dev @zemd/github-readme
+pnpm add -D @zemd/github-readme
 ```
 
 ### Configuration
