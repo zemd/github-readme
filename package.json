@@ -1,6 +1,6 @@
 {
   "name": "@zemd/github-readme",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Simple utils to build readme files for my projects",
   "scripts": {
     "lint": "eslint .",
