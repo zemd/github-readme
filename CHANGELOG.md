@@ -1,5 +1,11 @@
 # @zemd/github-readme
 
+## 0.0.5
+
+### Patch Changes
+
+- 6133bfb: fix reading root package.json
+
 ## 0.0.4
 
 ### Patch Changes
