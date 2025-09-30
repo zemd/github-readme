@@ -54,7 +54,7 @@
     "@ai-sdk/openai": "^2.0.3",
     "ai": "^5.0.4",
     "cac": "^6.7.14",
-    "globby": "^14.1.0",
+    "globby": "^15.0.0",
     "package-json-from-dist": "^1.0.1",
     "spdx-license-list": "^6.9.0"
   },
